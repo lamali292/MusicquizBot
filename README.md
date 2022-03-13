@@ -5,5 +5,7 @@
 3. ausführen mit "java -jar MusicquizBot-0.0.1-SNAPSHOT-jar-with-dependencies.jar [Discord Secret Bot Token]"
 
 !help - Befehle
+
 !quiz start - Songquiz starten
+
 !quiz start [lobbytime] [requesttime] [guesstime] - Songquiz mit manuellen Zeitangeben starten
