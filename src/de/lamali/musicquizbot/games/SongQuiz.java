@@ -183,9 +183,9 @@ public class SongQuiz {
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				state = GameState.BETWEEN;
 				Song song = songs.get(songindex);
 				if (!guessed.get(song)) {
+					state = GameState.BETWEEN;
 					guessed.replace(song, true);
 					channel.sendMessage("Time Is Up: Song was "+song.getLink()+" !").queue();
 					showPoints();
