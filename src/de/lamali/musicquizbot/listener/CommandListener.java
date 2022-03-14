@@ -1,5 +1,7 @@
 package de.lamali.musicquizbot.listener;
 
+import java.util.concurrent.TimeUnit;
+
 import de.lamali.musicquizbot.MusicquizBot;
 import de.lamali.musicquizbot.YoutubeRequest;
 import de.lamali.musicquizbot.games.Song;
@@ -69,8 +71,17 @@ public class CommandListener extends ListenerAdapter {
 				Song song = activeGame.requests.get(event.getMessageId());
 				activeGame.addSong(song);
 				event.getChannel().purgeMessagesById(event.getReaction().getMessageId());
-				event.getChannel().sendMessage("song "+song.getLink()+" succesfully added!").queue();
+				event.getChannel().sendMessage("song "+song.getLink()+" succesfully added!").complete().delete().queueAfter(10, TimeUnit.SECONDS);
 			}
+		} 
+		if (event.isFromType(ChannelType.TEXT) && !user.isBot()) {
+			if(activeGame != null && activeGame.state == GameState.GUESSING
+				&& event.getReactionEmote().toString().equals("RE:U+1f504")) {
+				activeGame.playSong(activeGame.songs.get(activeGame.currentSongIndex));
+			}
+			event.getReaction().removeReaction(user).queue();
 		}
 	}
+	
+
 }

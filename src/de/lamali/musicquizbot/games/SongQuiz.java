@@ -28,11 +28,11 @@ public class SongQuiz {
 	public static HashMap<String, SongQuiz> games = new HashMap<>();
 	public HashMap<String, Song> requests = new HashMap<>();
 	public HashMap<User, Integer> leaderbord = new HashMap<>();
-	public List<Song> songs = new ArrayList<Song>();
 	public HashMap<Song, Boolean> guessed = new HashMap<>();
+	public List<Song> songs = new ArrayList<Song>();
 	public List<Member> players = new ArrayList<Member>();
-	public String hash;
 	public GameState state = GameState.LOBBY;
+	public String hash;
 	public TextChannel channel;
 	public AudioChannel audio;
 	private final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
@@ -78,23 +78,29 @@ public class SongQuiz {
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				channel.sendMessage("Game "+hash+" starts in "+(lobbyTime-lobbyTime/2)+" Seconds!").complete().delete().queueAfter(lobbyTime-lobbyTime/2, TimeUnit.SECONDS);
+				if (state != GameState.ENDED) {
+					channel.sendMessage("Game "+hash+" starts in "+(lobbyTime-lobbyTime/2)+" Seconds!").complete().delete().queueAfter(lobbyTime-lobbyTime/2, TimeUnit.SECONDS);
+				}
 			}
 		}, lobbyTime/2, TimeUnit.SECONDS);
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				channel.sendMessage("Game "+hash+" starts in "+lobbyTime/10+" Seconds!").complete().delete().queueAfter(lobbyTime/10, TimeUnit.SECONDS);
+				if (state != GameState.ENDED) {
+					channel.sendMessage("Game "+hash+" starts in "+lobbyTime/10+" Seconds!").complete().delete().queueAfter(lobbyTime/10, TimeUnit.SECONDS);
+				}
 			}
 		}, lobbyTime-lobbyTime/10, TimeUnit.SECONDS);
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				if (players.size() > 0) {
-					startRequesting();
-				} else {
-					games.remove(hash);
-					channel.sendMessage("Closed Lobby with hash "+hash+". Not enough players!").complete().delete().queueAfter(20, TimeUnit.SECONDS);
+				if (state != GameState.ENDED) {
+					if (players.size() > 0) {
+						startRequesting();
+					} else {
+						channel.sendMessage("Closed Lobby with hash "+hash+". Not enough players!").complete().delete().queueAfter(20, TimeUnit.SECONDS);
+						end();
+					}
 				}
 			}
 		}, lobbyTime, TimeUnit.SECONDS);
@@ -137,11 +143,13 @@ public class SongQuiz {
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				if (songs.size() > 0) {
-					startGuessing();
-				} else {
-					games.remove(hash);
-					channel.sendMessage("Closed Lobby with hash "+hash+". Not enough Songs!").complete().delete().queueAfter(20, TimeUnit.SECONDS);
+				if (state != GameState.ENDED) {
+					if (songs.size() > 0) {
+						startGuessing();
+					} else {
+						channel.sendMessage("Closed Lobby with hash "+hash+". Not enough Songs!").complete().delete().queueAfter(10, TimeUnit.SECONDS);
+						end();
+					}
 				}
 			}
 
@@ -162,12 +170,14 @@ public class SongQuiz {
 		state = GameState.GUESSING;
 		Song song = songs.get(currentSongIndex);
 		int songindex = currentSongIndex;
-		channel.sendMessage("next song requested by "+song.getUser().getAsMention()+". You have "+guessTime+"s to get the song!").queue();
+		Message mess = channel.sendMessage("next song requested by "+song.getUser().getAsMention()+". You have "+guessTime+"s to get the song!").complete();
+		mess.delete().queueAfter(guessTime, TimeUnit.SECONDS);
+		mess.addReaction("U+1F504").queue();
 		playSong(song);
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				if (!guessed.get(song)) {
+				if (!guessed.get(song) && state != GameState.ENDED) {
 					channel.sendMessage("Round ends in "+(guessTime-guessTime/2)+" Seconds!").complete().delete().queueAfter(guessTime-guessTime/2, TimeUnit.SECONDS);
 				}
 			}
@@ -175,7 +185,7 @@ public class SongQuiz {
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				if (!guessed.get(song)) {
+				if (!guessed.get(song) && state != GameState.ENDED) {
 					channel.sendMessage("Round ends in "+guessTime/10+" Seconds!").complete().delete().queueAfter(guessTime/10, TimeUnit.SECONDS);
 				}
 			}
@@ -184,7 +194,7 @@ public class SongQuiz {
 			@Override
 			public void run() {
 				Song song = songs.get(songindex);
-				if (!guessed.get(song)) {
+				if (!guessed.get(song) && state != GameState.ENDED) {
 					state = GameState.BETWEEN;
 					guessed.replace(song, true);
 					channel.sendMessage("Time Is Up: Song was "+song.getLink()+" !").queue();
@@ -250,7 +260,6 @@ public class SongQuiz {
 	}
 	
 	public void playSong(Song song) {
-		audio = players.get(0).getVoiceState().getChannel();
 		SoundController controller = MusicquizBot.INSTANCE.playerManager.getController(audio.getGuild().getIdLong());
 		AudioPlayerManager apm = MusicquizBot.INSTANCE.audioPlayerManager;
 		AudioManager audioManager = audio.getGuild().getAudioManager();
@@ -268,10 +277,10 @@ public class SongQuiz {
 		if (state == GameState.LOBBY) {
 			if (!players.contains(m)) {
 				players.add(m);
-				channel.sendMessage(m.getAsMention() + " joined the game").complete().delete().queueAfter(1, TimeUnit.MINUTES);
+				channel.sendMessage(m.getAsMention() + " joined the game").complete().delete().queueAfter(lobbyTime, TimeUnit.SECONDS);
 				//sendMessage(m.getUser(), "You joined Cluedo with game hash "+hash+"");
 			}
-		} else {
+		} else if (state != GameState.ENDED) {
 			channel.sendMessage("Already ingame!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
 		}
 	}

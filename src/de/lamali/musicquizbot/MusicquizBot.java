@@ -48,7 +48,7 @@ public class MusicquizBot {
 		intents.add(GatewayIntent.GUILD_MESSAGES);
 		intents.add(GatewayIntent.DIRECT_MESSAGES);
 		intents.add(GatewayIntent.DIRECT_MESSAGE_REACTIONS);
-
+		
 		DefaultShardManagerBuilder builder = DefaultShardManagerBuilder.create(intents);
 		builder.setToken(Constants.JDA_TOKEN);
 

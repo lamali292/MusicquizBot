@@ -15,65 +15,59 @@ public class QuizCommand implements ServerCommand {
 	@Override
 	public void performCommand(Member m, TextChannel channel, Message message) {
 		String[] args = message.getContentDisplay().split(" ");
-		GuildVoiceState vState = m.getVoiceState();
-		if (vState == null) {
-			channel.sendMessage("Voice Channel not found! Join Audio Channel!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
-			message.delete().queue();
-			return;
-		}
-		AudioChannel vc = vState.getChannel();
-		if (vc == null) {
-			channel.sendMessage("Voice Channel not found! Join Audio Channel!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
-			message.delete().queue();
-			return;
-		}
-		if (args.length == 2) {
-			String command = args[1];
-			if (command.equalsIgnoreCase("start")) {
+		String command = args[1];
+		if (command.equalsIgnoreCase("start")) {
+			GuildVoiceState vState = m.getVoiceState();
+			if (vState == null) {
+				channel.sendMessage("Voice Channel not found! Join Audio Channel!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
+				return;
+			}
+			AudioChannel vc = vState.getChannel();
+			if (vc == null) {
+				channel.sendMessage("Voice Channel not found! Join Audio Channel!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
+				return;
+			}
+			if (args.length == 2) {
 				String hash = "#"+(int)(Math.random()*10000);
 				while(SongQuiz.getGame(hash)!=null) {
 					hash = "#"+(int)(Math.random()*10000);
 				}
 				new SongQuiz(hash, channel, vc);
-			}
-			message.delete().queue();
-		}else if (args.length == 3) {
-			String command = args[1];
-			String hash = args[2];
-			SongQuiz game = SongQuiz.getGame(hash);
-			if (command.equalsIgnoreCase("start")) {
+			} else if (args.length == 3) {
+				String hash = args[2];
+				SongQuiz game = SongQuiz.getGame(hash);
 				if (game == null) {
-					SongQuiz quiz = new SongQuiz(hash, channel, vc);
-					quiz.lobbyTime = Integer.parseInt(args[3]);
-					quiz.lobbyTime = Integer.parseInt(args[4]);
+					new SongQuiz(hash, channel, vc);
 				} else {
 					channel.sendMessage("Already started Lobby with hash: " + hash).complete().delete().queueAfter(3,
 							TimeUnit.SECONDS);
 				}
-
-			} else if (game == null) {
-				channel.sendMessage("Game not found").complete().delete().queueAfter(3, TimeUnit.SECONDS);
-			} else {
-				if (command.equalsIgnoreCase("join")) {
-					game.join(m);
-				} else if (command.equalsIgnoreCase("end")) {
-					game.end();
-				}
-			}
-			message.delete().queue();
-
-		}else if (args.length == 5) {
-			String command = args[1];
-			if (command.equalsIgnoreCase("start")) {
+			}  else if (args.length == 5) {
 				String hash = "#"+(int)(Math.random()*10000);
 				while(SongQuiz.getGame(hash)!=null) {
 					hash = "#"+(int)(Math.random()*10000);
 				}
 				new SongQuiz(hash, channel, vc, Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
 			}
-			message.delete().queue();
-
+		} else if (command.equalsIgnoreCase("join")) {
+			String hash = args[2];
+			SongQuiz game = SongQuiz.getGame(hash);
+			if (game == null) {
+				channel.sendMessage("game with "+hash+" not found!").complete().delete().queueAfter(3,TimeUnit.SECONDS);
+			} else {
+				game.join(m);
+			}
+			
+		} else if (command.equalsIgnoreCase("end")) {
+			String hash = args[2];
+			SongQuiz game = SongQuiz.getGame(hash);
+			if (game == null) {
+				channel.sendMessage("game with "+hash+" not found!").complete().delete().queueAfter(3,TimeUnit.SECONDS);
+			} else {
+				game.end();
+			}
 		}
+		message.delete().queue();
 
 	}
 
