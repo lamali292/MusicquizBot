@@ -9,10 +9,13 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 public class CommandManager {
-	public ConcurrentHashMap<String, ServerCommand> serverCommands;
-	public ConcurrentHashMap<String, PrivateCommand> privateCommands;
+	public ConcurrentHashMap<String, GuildCommand> serverCommands;
+	public ConcurrentHashMap<String, GlobalCommand> privateCommands;
 
 	public CommandManager() {
 		this.serverCommands = new ConcurrentHashMap<>();
@@ -22,11 +25,11 @@ public class CommandManager {
 		this.serverCommands.put("quiz", new QuizCommand());
 	}
 
-	public boolean performServerCommand(String command, Member m, TextChannel channel, Message message) {
-		ServerCommand cmd;
+	public boolean performGuildCommand(String command, SlashCommandInteraction event) {
+		GuildCommand cmd;
 
-		if ((cmd = this.serverCommands.get(command.toLowerCase())) != null) {
-			cmd.performCommand(m, channel, message);
+		if ((cmd = this.serverCommands.get(command)) != null) {
+			cmd.performCommand(event);
 			return true;
 		}
 
@@ -34,7 +37,7 @@ public class CommandManager {
 	}
 
 	public boolean performPrivateCommand(String command, User m, PrivateChannel channel, Message message) {
-		PrivateCommand cmd;
+		GlobalCommand cmd;
 
 		if ((cmd = this.privateCommands.get(command.toLowerCase())) != null) {
 			cmd.performCommand(m, channel, message);
