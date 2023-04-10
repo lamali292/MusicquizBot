@@ -32,7 +32,7 @@ public class CommandListener extends ListenerAdapter {
 		String id = event.getButton().getId();
 		if (id == null) return;
 		Member m = event.getMember();
-		String[] cmd = id.split("_");
+		String[] cmd = id.split("_", 3);
 
 		if (cmd.length == 2){
 			String hash = cmd[0];
@@ -42,26 +42,28 @@ public class CommandListener extends ListenerAdapter {
 				event.reply("game with " + hash + " not found!").complete().deleteOriginal().queueAfter(3, TimeUnit.SECONDS);
 			} else if (command.equals("join")) {
 				game.join(m, event.getInteraction());
-			} else if(game.host.equals(m)){
-				switch (command) {
-					case "start":
-						game.startRequesting(event.getInteraction());
-						break;
-					case "guess":
-						game.startGuessing(event.getInteraction());
-						break;
-					case "remove":
-						game.end(event.getInteraction());
-						break;
-					case "skip":
-						game.skip(event.getInteraction());
-						break;
-					case "reload":
-						game.reload(event.getInteraction());
-						break;
-				}
 			} else {
-				event.reply("only the host " + game.host.getAsMention() + " can do this action!").complete().deleteOriginal().queueAfter(3, TimeUnit.SECONDS);
+				if(game.host.equals(m)){
+					switch (command) {
+						case "start":
+							game.startRequesting(event.getInteraction());
+							break;
+						case "guess":
+							game.startGuessing(event.getInteraction());
+							break;
+						case "remove":
+							game.end(event.getInteraction());
+							break;
+						case "skip":
+							game.skip(event.getInteraction());
+							break;
+						case "reload":
+							game.reload(event.getInteraction());
+							break;
+					}
+				} else {
+					event.reply("only the host " + game.host.getAsMention() + " can do this action!").complete().deleteOriginal().queueAfter(3, TimeUnit.SECONDS);
+				}
 			}
 		} else if (cmd.length == 3){
 			String hash = cmd[0];
