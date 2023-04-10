@@ -22,11 +22,10 @@ public class YoutubeRequest {
 			Pattern pattern1 = Pattern.compile(patternString1);
 			Matcher matcher1 = pattern1.matcher(buffer);
 			if (matcher1.find()) {
-				String match = matcher1.group(1);
-				return match;
+				return matcher1.group(1);
 			}
-			
-			
+
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -6,9 +6,9 @@ import de.lamali.musicquizbot.commands.*;
 import de.lamali.musicquizbot.commands.types.*;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.PrivateChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 public class CommandManager {
 	public ConcurrentHashMap<String, ServerCommand> serverCommands;
@@ -17,7 +17,7 @@ public class CommandManager {
 	public CommandManager() {
 		this.serverCommands = new ConcurrentHashMap<>();
 		this.privateCommands = new ConcurrentHashMap<>();
-			
+
 		this.serverCommands.put("help", new HelpCommand());
 		this.serverCommands.put("quiz", new QuizCommand());
 	}
@@ -32,7 +32,7 @@ public class CommandManager {
 
 		return false;
 	}
-	
+
 	public boolean performPrivateCommand(String command, User m, PrivateChannel channel, Message message) {
 		PrivateCommand cmd;
 

@@ -15,16 +15,18 @@ import de.lamali.musicquizbot.MusicquizBot;
 import de.lamali.musicquizbot.sound.AudioLoadResult;
 import de.lamali.musicquizbot.sound.SoundController;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.managers.AudioManager;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 public class SongQuiz {
-	
+
 	public static HashMap<String, SongQuiz> games = new HashMap<>();
 	public HashMap<String, Song> requests = new HashMap<>();
 	public HashMap<User, Integer> leaderbord = new HashMap<>();
@@ -40,12 +42,12 @@ public class SongQuiz {
 	public int requestTime = 120;
 	public int guessTime = 120;
 	public int currentSongIndex = 0;
-	
+
 	public enum GameState {
 		LOBBY, REQUESTING, BETWEEN, GUESSING, ENDED
 	}
 
-	
+
 	public SongQuiz(String hash, TextChannel channel, AudioChannel audio) {
 		this.channel = channel;
 		this.audio = audio;
@@ -57,7 +59,7 @@ public class SongQuiz {
 			channel.sendMessage("Hash already used!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
 		}
 	}
-	
+
 	public SongQuiz(String hash, TextChannel channel, AudioChannel audio, int lobbyTime, int requestTime, int guessTime) {
 		this.lobbyTime = lobbyTime;
 		this.requestTime = requestTime;
@@ -72,7 +74,7 @@ public class SongQuiz {
 			channel.sendMessage("Hash already used!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
 		}
 	}
-	
+
 	public void startLobby() {
 		channel.sendMessage("Song Quiz lobby started. Join with **!quiz join "+hash+"** in the next "+lobbyTime+" Seconds.").complete().delete().queueAfter(lobbyTime, TimeUnit.SECONDS);
 		executor.schedule(new Runnable() {
@@ -105,11 +107,11 @@ public class SongQuiz {
 			}
 		}, lobbyTime, TimeUnit.SECONDS);
 	}
-	
+
 	public static SongQuiz getGame(String hash) {
 		return games.get(hash);
 	}
-	
+
 	public static boolean isGuessingActive(TextChannel channel) {
 		for (SongQuiz game : games.values()) {
 			if (game.channel == channel) {
@@ -118,7 +120,7 @@ public class SongQuiz {
 		}
 		return false;
 	}
-	
+
 	public static SongQuiz getGameFromUser(User author) {
 		for (SongQuiz game : games.values()) {
 			for (Member mem : game.players) {
@@ -129,12 +131,12 @@ public class SongQuiz {
 		}
 		return null;
 	}
-	
+
 	public void startRequesting() {
 		state = GameState.REQUESTING;
-		String msg = "";
+		StringBuilder msg = new StringBuilder();
 		for (Member player : players) {
-			msg += " "+player.getAsMention();
+			msg.append(" ").append(player.getAsMention());
 			leaderbord.put(player.getUser(), 0);
 			sendMessage(player.getUser(), "Request song names here!");
 		}
@@ -156,7 +158,7 @@ public class SongQuiz {
 
 		}, requestTime, TimeUnit.SECONDS);
 	}
-	
+
 	public void startGuessing() {
 		Collections.shuffle(songs);
 		for (Song song : songs) {
@@ -165,14 +167,14 @@ public class SongQuiz {
 		state = GameState.BETWEEN;
 		startNextRound();
 	}
-	
+
 	public void startNextRound() {
 		state = GameState.GUESSING;
 		Song song = songs.get(currentSongIndex);
 		int songindex = currentSongIndex;
 		Message mess = channel.sendMessage("next song requested by "+song.getUser().getAsMention()+". You have "+guessTime+"s to get the song!").complete();
 		mess.delete().queueAfter(guessTime, TimeUnit.SECONDS);
-		mess.addReaction("U+1F504").queue();
+		mess.addReaction(Emoji.fromUnicode("U+1F504")).queue();
 		playSong(song);
 		executor.schedule(new Runnable() {
 			@Override
@@ -209,7 +211,7 @@ public class SongQuiz {
 			}
 		}, guessTime, TimeUnit.SECONDS);
 	}
-	
+
 	public void guessCurrentSong(User user, String link) {
 		Song song = songs.get(currentSongIndex);
 		if (song.getUser().getId().equals(user.getId()) && players.size() > 1) {
@@ -228,51 +230,52 @@ public class SongQuiz {
 			} else {
 				end();
 			}
-			
+
 		}
 	}
-	
+
 	public void addPoint(User user) {
-		if (!leaderbord.keySet().contains(user)) {
+		if (!leaderbord.containsKey(user)) {
 			leaderbord.put(user, 0);
 		}
 		int points = leaderbord.get(user);
 		leaderbord.replace(user, points + 1);
 	}
-	
+
 	public void showPoints() {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setColor(Color.cyan);
 		embed.setTimestamp(Instant.now());
 		embed.setTitle("Leaderboard:");
-		
-		String users = "";
-		String points = "";
+
+		StringBuilder users = new StringBuilder();
+		StringBuilder points = new StringBuilder();
 		for (User user : leaderbord.keySet()) {
-			users += user.getAsMention() + ":\n";
-			points += leaderbord.get(user) + "\n";
+			users.append(user.getAsMention()).append(":\n");
+			points.append(leaderbord.get(user)).append("\n");
 		}
-		embed.addField("Round "+(currentSongIndex+1)+"/"+songs.size(), users, true);
-		embed.addField("", points, true);
+		embed.addField("Round "+(currentSongIndex+1)+"/"+songs.size(), users.toString(), true);
+		embed.addField("", points.toString(), true);
 
 		embed.addBlankField(true);
 		channel.sendMessageEmbeds(embed.build()).queue();
 	}
-	
+
 	public void playSong(Song song) {
 		SoundController controller = MusicquizBot.INSTANCE.playerManager.getController(audio.getGuild().getIdLong());
 		AudioPlayerManager apm = MusicquizBot.INSTANCE.audioPlayerManager;
 		AudioManager audioManager = audio.getGuild().getAudioManager();
+		controller.getPlayer().setVolume(100);
 		audioManager.openAudioConnection(audio);
 		String url = song.getLink();
 		apm.loadItem(url, new AudioLoadResult(controller, url));
 	}
-	
+
 	public void endSong() {
 		AudioManager audioManager = audio.getGuild().getAudioManager();
 		audioManager.closeAudioConnection();
 	}
-	
+
 	public void join(Member m) {
 		if (state == GameState.LOBBY) {
 			if (!players.contains(m)) {
@@ -284,23 +287,23 @@ public class SongQuiz {
 			channel.sendMessage("Already ingame!").complete().delete().queueAfter(3, TimeUnit.SECONDS);
 		}
 	}
-	
+
 	public void end() {
 		channel.sendMessage("Song Quiz Game "+hash+" ended!").queue();
 		endSong();
 		state = GameState.ENDED;
 		games.remove(hash);
 	}
-	
+
 	public void sendMessage(User user, String content) {
 		user.openPrivateChannel().flatMap(channel -> channel.sendMessage(content)).queue();
 	}
-	
+
 	public void sendMessageEmbeds(User user, MessageEmbed content) {
 		user.openPrivateChannel().flatMap(channel -> channel.sendMessageEmbeds(content)).queue();
 	}
-	
-	public void sendMessage(User user, Message content) {
+
+	public void sendMessage(User user, MessageCreateData content) {
 		user.openPrivateChannel().flatMap(channel -> channel.sendMessage(content)).queue();
 	}
 

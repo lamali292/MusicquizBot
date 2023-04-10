@@ -4,12 +4,12 @@ import java.util.concurrent.TimeUnit;
 
 import de.lamali.musicquizbot.commands.types.ServerCommand;
 import de.lamali.musicquizbot.games.SongQuiz;
-import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
 public class QuizCommand implements ServerCommand {
 	@Override
@@ -57,7 +57,7 @@ public class QuizCommand implements ServerCommand {
 			} else {
 				game.join(m);
 			}
-			
+
 		} else if (command.equalsIgnoreCase("end")) {
 			String hash = args[2];
 			SongQuiz game = SongQuiz.getGame(hash);
