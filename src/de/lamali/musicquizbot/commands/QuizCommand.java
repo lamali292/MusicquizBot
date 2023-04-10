@@ -30,20 +30,7 @@ public class QuizCommand implements GuildCommand {
 			interaction.reply("Voice Channel not found! Join Audio Channel!").complete().deleteOriginal().queueAfter(3,TimeUnit.SECONDS);
 			return;
 		}
-		String hash = "#"+(int)(Math.random()*10000);
-		while(SongQuiz.getGame(hash)!=null) {
-			hash = "#"+(int)(Math.random()*10000);
-		}
-		new SongQuiz(hash, channel, vc, interaction);
-
-		//  else if (args.length == 5) {
-		//	String hash = "#"+(int)(Math.random()*10000);
-		//	while(SongQuiz.getGame(hash)!=null) {
-		//		hash = "#"+(int)(Math.random()*10000);
-		//	}
-		//	new SongQuiz(hash, channel, vc, Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
-		//}
-
+		new SongQuiz(channel, vc, interaction);
 
 	}
 
